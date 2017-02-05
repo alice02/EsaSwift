@@ -31,17 +31,39 @@ class EsaClient: EsaClientProtocol {
             var response = try client!.get(path, headers: auth_header!)
             return EsaResponse(response: response)
         } catch {
+            // TODO Error Handling
             return nil
         }
     }
 
     func send_post(path: String) -> EsaResponse? {
+        do {
+            var response = try client!.post(path, headers: auth_header!)
+            return EsaResponse(response: response)
+        } catch {
+            // TODO Error Handling
+            return nil
+        }
     }
 
     func send_put(path: String) -> EsaResponse? {
+        do {
+            var response = try client!.put(path, headers: auth_header!)
+            return EsaResponse(response: response)
+        } catch {
+            // TODO Error Handling
+            return nil
+        }
     }
 
     func send_delete(path: String) -> EsaResponse? {
+        do {
+            var response = try client!.delete(path, headers: auth_header!)
+            return EsaResponse(response: response)
+        } catch {
+            // TODO Error Handling
+            return nil
+        }
     }
 
 }
