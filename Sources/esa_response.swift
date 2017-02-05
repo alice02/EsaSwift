@@ -1,26 +1,19 @@
-import HTTP
-import Axis
 import Foundation
 
 struct EsaResponse {
 
-    private var raw_body: Body?
-    private var raw_headers: Headers?
-    private var raw_status: Int?
+    private var raw_data: Data
+    private var raw_response: HTTPURLResponse
     
-    init(response: Response) {
-        self.raw_body = response.body
-        self.raw_headers = response.headers
-        self.raw_status = response.statusCode
+    init(data: Data?, response: URLResponse?) {
+        self.raw_data = data!
+        self.raw_response = response! as! HTTPURLResponse
     }
 
     var body: Any {
         get {
             do {
-                var body = self.raw_body!
-                let buffer = try body.becomeBuffer(deadline: 3.second.fromNow())
-                let data = Data(bytes: buffer.bytes)
-                let json = try JSONSerialization.jsonObject(with: data)
+                let json = try JSONSerialization.jsonObject(with: raw_data, options: .allowFragments)
                 return json
             } catch {
                 // TODO Error Handling
@@ -29,19 +22,15 @@ struct EsaResponse {
         }
     }
     
-    var headers: [String : String] {
+    var headers: Any {
         get {
-            var headers_dict: [String: String] = [:]
-            for (header, value) in self.raw_headers! {
-                headers_dict[header.description] = value
-            }
-            return headers_dict
+            return raw_response.allHeaderFields
         }
     }
     
     var status: Int {
         get {
-            return self.raw_status!
+            return self.raw_response.statusCode
         }
     }
 }

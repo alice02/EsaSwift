@@ -1,8 +1,8 @@
-import HTTPClient
+import Foundation
 
 protocol EsaClientProtocol {
     func send_get(path: String) -> EsaResponse?
-    func send_post(path: String) -> EsaResponse?
+    func send_post(path: String, body: Any) -> EsaResponse?
     func send_put(path: String) -> EsaResponse?
     func send_delete(path: String) -> EsaResponse?
 }
@@ -12,58 +12,80 @@ class EsaClient: EsaClientProtocol {
     var access_token: String?
     var current_team: String?
     let api_endpoint = URL(string: "https://api.esa.io")
-    let auth_header: Headers?
-    let client: Client?
+    let session: URLSession = URLSession(configuration: .default)
     
-    init(access_token: String? = nil, current_team: String? = nil) {
+    init(access_token: String?, current_team: String? = nil) {
         self.access_token = access_token
         self.current_team = current_team
-        self.auth_header = ["Authorization": "Bearer \(self.access_token!)"]
-        do {
-            self.client = try Client(url: api_endpoint!)
-        } catch {
-            self.client = nil
-        }
     }
     
     func send_get(path: String) -> EsaResponse? {
-        do {
-            var response = try client!.get(path, headers: auth_header!)
-            return EsaResponse(response: response)
-        } catch {
-            // TODO Error Handling
+        let url = URL(string: "https://api.esa.io" + path)
+        var request: URLRequest = URLRequest(url: url!)
+        let cond = NSCondition()
+        var error: Error?
+        var data: Data?
+        var response: URLResponse?
+        
+        request.httpMethod = "GET"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(self.access_token!)",
+                         forHTTPHeaderField: "Authorization")
+        session.dataTask(with: request,
+                         completionHandler: { (dat, resp, err) in
+                             data = dat
+                             error = err
+                             response = resp
+                             cond.broadcast()
+                         }).resume()
+        cond.wait()
+
+        if error != nil {
             return nil
         }
+        return EsaResponse(data: data, response: response)
     }
 
-    func send_post(path: String) -> EsaResponse? {
+    func send_post(path: String, body: Any) -> EsaResponse? {
+        let url = URL(string: "https://api.esa.io" + path)
+        var request: URLRequest = URLRequest(url: url!)
+        let cond = NSCondition()
+        var error: Error?
+        var data: Data?
+        var response: URLResponse?
+        
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(self.access_token!)",
+                         forHTTPHeaderField: "Authorization")
         do {
-            var response = try client!.post(path, headers: auth_header!)
-            return EsaResponse(response: response)
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .prettyPrinted)
         } catch {
-            // TODO Error Handling
+            print("json serialization error")
+        }
+
+        session.dataTask(with: request,
+                         completionHandler: { (dat, resp, err) in
+                             data = dat
+                             error = err
+                             response = resp
+                             cond.broadcast()
+                         }).resume()
+        cond.wait()
+
+        if error != nil {
             return nil
         }
+        return EsaResponse(data: data, response: response)
     }
 
     func send_put(path: String) -> EsaResponse? {
-        do {
-            var response = try client!.put(path, headers: auth_header!)
-            return EsaResponse(response: response)
-        } catch {
-            // TODO Error Handling
-            return nil
-        }
+        return nil
     }
 
     func send_delete(path: String) -> EsaResponse? {
-        do {
-            var response = try client!.delete(path, headers: auth_header!)
-            return EsaResponse(response: response)
-        } catch {
-            // TODO Error Handling
-            return nil
-        }
+        return nil
     }
 
 }
