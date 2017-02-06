@@ -3,7 +3,7 @@ import Foundation
 protocol EsaClientProtocol {
     func send_get(path: String, params: Dictionary<String, String>?) -> EsaResponse?
     func send_post(path: String, body: Any) -> EsaResponse?
-    func send_put(path: String) -> EsaResponse?
+    func send_patch(path: String, body: Any) -> EsaResponse?
     func send_delete(path: String) -> EsaResponse?
 }
 
@@ -91,8 +91,39 @@ class EsaClient: EsaClientProtocol {
         return EsaResponse(data: data, response: response)
     }
 
-    func send_put(path: String) -> EsaResponse? {
-        return nil
+    func send_patch(path: String, body: Any) -> EsaResponse? {
+        self.api_endpoint.path = path
+        let url = self.api_endpoint.url!
+        var request: URLRequest = URLRequest(url: url)
+        let cond = NSCondition()
+        var error: Error?
+        var data: Data?
+        var response: URLResponse?
+
+        request.httpMethod = "PATCH"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(self.access_token!)",
+                         forHTTPHeaderField: "Authorization")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .prettyPrinted)
+        } catch {
+            print("json serialization error")
+        }
+
+        session.dataTask(with: request,
+                         completionHandler: { (dat, resp, err) in
+                             data = dat
+                             error = err
+                             response = resp
+                             cond.broadcast()
+                         }).resume()
+        cond.wait()
+
+        if error != nil {
+            return nil
+        }
+        return EsaResponse(data: data, response: response)
     }
 
     func send_delete(path: String) -> EsaResponse? {
