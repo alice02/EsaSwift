@@ -127,7 +127,31 @@ class EsaClient: EsaClientProtocol {
     }
 
     func send_delete(path: String) -> EsaResponse? {
-        return nil
+        self.api_endpoint.path = path
+        let url = self.api_endpoint.url!
+        var request: URLRequest = URLRequest(url: url)
+        let cond = NSCondition()
+        var error: Error?
+        var data: Data?
+        var response: URLResponse?
+        
+        request.httpMethod = "DELETE"
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.addValue("Bearer \(self.access_token!)",
+                         forHTTPHeaderField: "Authorization")
+        session.dataTask(with: request,
+                         completionHandler: { (dat, resp, err) in
+                             data = dat
+                             error = err
+                             response = resp
+                             cond.broadcast()
+                         }).resume()
+        cond.wait()
+
+        if error != nil {
+            return nil
+        }
+        return EsaResponse(data: data, response: response)
     }
 
 }
