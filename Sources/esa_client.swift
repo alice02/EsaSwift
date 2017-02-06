@@ -57,8 +57,9 @@ class EsaClient: EsaClientProtocol {
     }
 
     func send_post(path: String, body: Any) -> EsaResponse? {
-        let url = URL(string: "https://api.esa.io" + path)
-        var request: URLRequest = URLRequest(url: url!)
+        self.api_endpoint.path = path
+        let url = self.api_endpoint.url!
+        var request: URLRequest = URLRequest(url: url)
         let cond = NSCondition()
         var error: Error?
         var data: Data?
