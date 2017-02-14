@@ -1,157 +1,68 @@
 import Foundation
 
 protocol EsaClientProtocol {
-    func send_get(path: String, params: Dictionary<String, String>?) -> EsaResponse?
-    func send_post(path: String, body: Any) -> EsaResponse?
-    func send_patch(path: String, body: Any) -> EsaResponse?
-    func send_delete(path: String) -> EsaResponse?
+    func send_get(path: String, params: Dictionary<String, String>?) -> EsaResponse
+    func send_post(path: String, body: Any) -> EsaResponse
+    func send_patch(path: String, body: Any) -> EsaResponse
+    func send_delete(path: String) -> EsaResponse
 }
 
-class EsaClient: EsaClientProtocol {
+class EsaClient {
 
     var access_token: String?
     var current_team: String?
-    var api_endpoint = URLComponents(string: "https://api.esa.io")!
-    let session: URLSession = URLSession(configuration: .default)
+    var header = Dictionary<String, String>()
+    let client = HTTPClient(url: "https://api.esa.io")
     
     init(access_token: String?, current_team: String? = nil) {
         self.access_token = access_token
         self.current_team = current_team
+        self.set_default_header()
     }
     
-    func send_get(path: String, params: Dictionary<String, String>? = nil) -> EsaResponse? {
-        self.api_endpoint.path = path
-
-        if let queryParams = params {
-            var queryItems: [URLQueryItem] = []
-            for (key, value) in queryParams {
-                queryItems.append(URLQueryItem(name: key, value: value))
-            }
-            self.api_endpoint.queryItems = queryItems
-        }
-        let url = self.api_endpoint.url!
-
-        var request: URLRequest = URLRequest(url: url)
-        let cond = NSCondition()
-        var error: Error?
-        var data: Data?
-        var response: URLResponse?
-        
-        request.httpMethod = "GET"
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("Bearer \(self.access_token!)",
-                         forHTTPHeaderField: "Authorization")
-        session.dataTask(with: request,
-                         completionHandler: { (dat, resp, err) in
-                             data = dat
-                             error = err
-                             response = resp
-                             cond.broadcast()
-                         }).resume()
-        cond.wait()
-
-        if error != nil {
-            return nil
-        }
-        return EsaResponse(data: data, response: response)
+    func send_get(path: String, params: Dictionary<String, String>? = nil) -> EsaResponse {
+        let response = client.request(method: .get, path: path, params: params, headers: header)
+        return EsaResponse(response: response)
     }
 
-    func send_post(path: String, body: Any) -> EsaResponse? {
-        self.api_endpoint.path = path
-        let url = self.api_endpoint.url!
-        var request: URLRequest = URLRequest(url: url)
-        let cond = NSCondition()
-        var error: Error?
-        var data: Data?
-        var response: URLResponse?
-        
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("Bearer \(self.access_token!)",
-                         forHTTPHeaderField: "Authorization")
+    func send_post(path: String, body: Any) -> EsaResponse {
+        var bodyData: Data?
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .prettyPrinted)
+            bodyData = try JSONSerialization.data(withJSONObject: body,
+                                                  options: .prettyPrinted)
         } catch {
+            // TODO Error handling
             print("json serialization error")
         }
 
-        session.dataTask(with: request,
-                         completionHandler: { (dat, resp, err) in
-                             data = dat
-                             error = err
-                             response = resp
-                             cond.broadcast()
-                         }).resume()
-        cond.wait()
-
-        if error != nil {
-            return nil
-        }
-        return EsaResponse(data: data, response: response)
+        let response =  client.request(method: .post, path: path,
+                                  headers: header, body: bodyData)
+        return EsaResponse(response: response)
     }
 
-    func send_patch(path: String, body: Any) -> EsaResponse? {
-        self.api_endpoint.path = path
-        let url = self.api_endpoint.url!
-        var request: URLRequest = URLRequest(url: url)
-        let cond = NSCondition()
-        var error: Error?
-        var data: Data?
-        var response: URLResponse?
-
-        request.httpMethod = "PATCH"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("Bearer \(self.access_token!)",
-                         forHTTPHeaderField: "Authorization")
+    func send_patch(path: String, body: Any) -> EsaResponse {
+        var bodyData: Data?
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: .prettyPrinted)
+            bodyData = try JSONSerialization.data(withJSONObject: body,
+                                                  options: .prettyPrinted)
         } catch {
+            // TODO Error handling
             print("json serialization error")
         }
-
-        session.dataTask(with: request,
-                         completionHandler: { (dat, resp, err) in
-                             data = dat
-                             error = err
-                             response = resp
-                             cond.broadcast()
-                         }).resume()
-        cond.wait()
-
-        if error != nil {
-            return nil
-        }
-        return EsaResponse(data: data, response: response)
+        let response = client.request(method: .patch, path: path,
+                                      headers: header, body: bodyData)
+        return EsaResponse(response: response)
     }
 
-    func send_delete(path: String) -> EsaResponse? {
-        self.api_endpoint.path = path
-        let url = self.api_endpoint.url!
-        var request: URLRequest = URLRequest(url: url)
-        let cond = NSCondition()
-        var error: Error?
-        var data: Data?
-        var response: URLResponse?
-        
-        request.httpMethod = "DELETE"
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.addValue("Bearer \(self.access_token!)",
-                         forHTTPHeaderField: "Authorization")
-        session.dataTask(with: request,
-                         completionHandler: { (dat, resp, err) in
-                             data = dat
-                             error = err
-                             response = resp
-                             cond.broadcast()
-                         }).resume()
-        cond.wait()
+    func send_delete(path: String) -> EsaResponse {
+        let response = client.request(method: .delete, path: path, headers: header)
+        return EsaResponse(response: response)
+    }
 
-        if error != nil {
-            return nil
-        }
-        return EsaResponse(data: data, response: response)
+    private func set_default_header() {
+        header["Accept"] = "application/json"
+        header["Authorization"] = "Bearer \(self.access_token!)"
+        header["Content-Type"] = "application/json"        
     }
 
 }

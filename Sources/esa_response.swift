@@ -1,20 +1,22 @@
 import Foundation
 
 struct EsaResponse {
-
-    private var raw_data: Data
-    private var raw_response: HTTPURLResponse
+    var response: Response
     
-    init(data: Data?, response: URLResponse?) {
-        self.raw_data = data!
-        self.raw_response = response! as! HTTPURLResponse
+    init(response: Response) {
+        self.response = response
     }
 
-    var body: Any {
+    var body: Dictionary<String, String>? {
         get {
             do {
-                let json = try JSONSerialization.jsonObject(with: raw_data, options: .allowFragments)
-                return json
+                let json = try JSONSerialization.jsonObject(with: response.body!,
+                                                            options: .allowFragments) as? [String: Any]
+                var jsonItems = Dictionary<String, String>()
+                for (key, val) in json! {
+                    jsonItems[key] = String(describing: val)
+                }
+                return jsonItems
             } catch {
                 // TODO Error Handling
                 return [:]
@@ -22,15 +24,15 @@ struct EsaResponse {
         }
     }
     
-    var headers: Any {
+    var headers: Dictionary<String, String>? {
         get {
-            return raw_response.allHeaderFields
+            return response.headers as? Dictionary<String, String>
         }
     }
     
-    var status: Int {
+    var status: Int? {
         get {
-            return self.raw_response.statusCode
+            return self.response.status!
         }
     }
 }
