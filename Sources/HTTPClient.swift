@@ -95,13 +95,13 @@ struct Response {
         }
     }
     
-    var headers: Any {
+    var headers: Any? {
         get {
             return raw_response.allHeaderFields
         }
     }
     
-    var status: Int {
+    var status: Int? {
         get {
             return self.raw_response.statusCode
         }
