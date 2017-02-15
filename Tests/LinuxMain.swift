@@ -1,6 +1,6 @@
 import XCTest
-@testable import esa_swiftTests
+@testable import EsaSwiftTests
 
 XCTMain([
-     testCase(esa_swiftTests.allTests),
+     testCase(EsaClientTests.allTests),
 ])
