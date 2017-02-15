@@ -1,6 +1,7 @@
 # EsaSwift
 
 [![Swift](https://img.shields.io/badge/Swift-3.0-orange.svg?style=flat)](https://swift.org)
+[![Build Status](https://travis-ci.org/alice02/EsaSwift.svg?branch=master)](https://travis-ci.org/alice02/EsaSwift)
 
 esa API client for Swift
 
