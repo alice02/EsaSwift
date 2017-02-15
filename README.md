@@ -6,7 +6,7 @@ esa API client for Swift
 
 # Installation
 - via Swift Package Manager
-```
+```swift
 import PackageDescription
 
 let package = Package(
@@ -18,7 +18,7 @@ let package = Package(
 
 # Usage
 ## Example
-```
+```swift
 import EsaSwift
 
 let client = EsaClient(access_token: "<access_token>", current_team: "<current_team>")
