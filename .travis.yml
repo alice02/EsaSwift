@@ -4,7 +4,7 @@ services:
   - docker
 
 before_install:
-- docker pull swiftdocker/swift
+  - docker pull swiftdocker/swift
 
 script:
   - docker run --rm -v $(pwd):/work swiftdocker/swift swift test -C /work
