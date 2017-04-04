@@ -24,7 +24,11 @@ import EsaSwift
 
 let client = EsaClient(access_token: "<access_token>", current_team: "<current_team>")
 
-print(client.user())
+do {
+    try print(client.user()!)
+} catch {
+    print("error")
+}
 ```
 
 ## Methods
