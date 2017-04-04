@@ -2,7 +2,7 @@ import Foundation
 
 struct EsaResponse {
     var response: Response
-    
+
     init(response: Response) {
         self.response = response
     }
@@ -18,18 +18,17 @@ struct EsaResponse {
                 }
                 return jsonItems
             } catch {
-                // TODO Error Handling
-                return [:]
+                return ["Error":"EsaResponseError.JSONSerialization"]
             }
         }
     }
-    
+
     var headers: Dictionary<String, String>? {
         get {
             return response.headers as? Dictionary<String, String>
         }
     }
-    
+
     var status: Int? {
         get {
             return self.response.status!

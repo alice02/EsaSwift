@@ -1,5 +1,9 @@
 import Foundation
 
+enum HTTPClientError: Error {
+    case HTTPRequest
+}
+
 class HTTPClient {
     let session: URLSession = URLSession(configuration: .default)
     var base_url: String
@@ -16,7 +20,7 @@ class HTTPClient {
         self.base_url = url
     }
 
-    func request(method: HTTPMethod, path: String, params: Dictionary<String, String>? = nil, headers: Dictionary<String, String>? = nil, body: Data? = nil) -> Response {
+    func request(method: HTTPMethod, path: String, params: Dictionary<String, String>? = nil, headers: Dictionary<String, String>? = nil, body: Data? = nil) throws -> Response {
         var request: URLRequest
         var urlComponents = URLComponents(string: base_url)!
         urlComponents.path = path
@@ -39,7 +43,7 @@ class HTTPClient {
         if let httpBody = body {
             request.httpBody = httpBody
         }
-        
+
         switch method {
         case .get:
             request.httpMethod = "GET"
@@ -53,10 +57,10 @@ class HTTPClient {
             request.httpMethod = "DELETE"
         }
 
-        return task(request: request)
+        return try task(request: request)
     }
 
-    func task(request: URLRequest) -> Response {
+    func task(request: URLRequest) throws -> Response {
         var response: URLResponse?
         var data: Data?
         var error: Error?
@@ -71,19 +75,18 @@ class HTTPClient {
                          }).resume()
         condition.wait()
         if error != nil {
-            // TODO Error Handling
-            print("HTTPRequestError")
+            throw HTTPClientError.HTTPRequest
         }
 
         return Response(data: data, response: response)
     }
 }
-    
+
 struct Response {
 
     private var raw_data: Data
     private var raw_response: HTTPURLResponse
-    
+
     init(data: Data?, response: URLResponse?) {
         self.raw_data = data!
         self.raw_response = response! as! HTTPURLResponse
@@ -94,13 +97,13 @@ struct Response {
             return raw_data
         }
     }
-    
+
     var headers: Any? {
         get {
             return raw_response.allHeaderFields
         }
     }
-    
+
     var status: Int? {
         get {
             return self.raw_response.statusCode
